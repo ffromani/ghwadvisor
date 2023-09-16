@@ -49,6 +49,7 @@ func main() {
 
 	setupStart := time.Now()
 
+	klog.Infof("gathering machine data from %q", sysfsRoot)
 	intf, err := cadvisorcompat.NewFactory(sysfsRoot)
 	if err != nil {
 		klog.Fatalf("failed to collect system data: %v", err)
