@@ -6,6 +6,7 @@ require (
 	github.com/google/cadvisor v0.47.3
 	github.com/gorilla/mux v1.8.0
 	github.com/jaypipes/ghw v0.12.0
+	github.com/spf13/pflag v1.0.3
 	k8s.io/klog/v2 v2.100.1
 )
 

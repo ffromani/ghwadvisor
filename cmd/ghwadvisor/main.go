@@ -16,10 +16,13 @@ package main
 
 import (
 	"encoding/json"
+	goflag "flag"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
+
+	flag "github.com/spf13/pflag"
 
 	cadvisorapiv1 "github.com/google/cadvisor/info/v1"
 
@@ -30,7 +33,16 @@ import (
 )
 
 func main() {
-	klog.Infof("ghwadvisor starting")
+	klog.InitFlags(nil)
+
+	var port int
+	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
+	flag.IntVar(&port, "port", 8080, "port to listen")
+	flag.Parse()
+
+	addr := fmt.Sprintf(":%d", port)
+
+	klog.Infof("ghwadvisor starting on [%s]", addr)
 	defer klog.Infof("ghwadvisor stopped")
 
 	setupStart := time.Now()
@@ -53,7 +65,7 @@ func main() {
 	klog.Infof("ghwadvisor ready (setup time: %v)", time.Since(setupStart))
 
 	klog.Infof("machine data:\n%s", toJSON(mh.machineInfo))
-	log.Fatal(http.ListenAndServe(":8080", rt))
+	log.Fatal(http.ListenAndServe(addr, rt))
 }
 
 type machineHandler struct {
