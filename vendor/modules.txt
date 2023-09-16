@@ -13,7 +13,10 @@ github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
 # github.com/google/cadvisor v0.47.3
 ## explicit; go 1.16
+github.com/google/cadvisor/events
 github.com/google/cadvisor/info/v1
+github.com/google/cadvisor/info/v2
+github.com/google/cadvisor/utils
 # github.com/gorilla/mux v1.8.0
 ## explicit; go 1.12
 github.com/gorilla/mux

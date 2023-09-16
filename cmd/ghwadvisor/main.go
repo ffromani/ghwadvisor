@@ -28,7 +28,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"github.com/ffromani/ghwadvisor/pkg/ghwext/machine"
+	"github.com/ffromani/ghwadvisor/pkg/cadvisorcompat"
 	"github.com/ffromani/ghwadvisor/pkg/router"
 )
 
@@ -36,8 +36,10 @@ func main() {
 	klog.InitFlags(nil)
 
 	var port int
+	var sysfsRoot string
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.IntVar(&port, "port", 8080, "port to listen")
+	flag.StringVar(&sysfsRoot, "sysfs", "/sys", "sysfs mount point - use when run inside a container")
 	flag.Parse()
 
 	addr := fmt.Sprintf(":%d", port)
@@ -47,12 +49,17 @@ func main() {
 
 	setupStart := time.Now()
 
-	info, err := machine.New()
+	intf, err := cadvisorcompat.NewFactory(sysfsRoot)
 	if err != nil {
-		klog.Fatalf("ghw failed: %v", err)
+		klog.Fatalf("failed to collect system data: %v", err)
 	}
 
-	mh := machineHandler{machineInfo: info.ToCAdvisorMachineInfo()}
+	minfo, err := intf.MachineInfo()
+	if err != nil {
+		klog.Fatalf("failed to collect machine info: %v", err)
+	}
+
+	mh := machineHandler{machineInfo: minfo}
 	rt := router.New([]router.Route{
 		{
 			"machine",
