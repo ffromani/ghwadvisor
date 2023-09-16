@@ -16,12 +16,13 @@ package machine
 
 import (
 	"github.com/jaypipes/ghw/pkg/block"
-	"github.com/jaypipes/ghw/pkg/cpu"
 	"github.com/jaypipes/ghw/pkg/memory"
 	"github.com/jaypipes/ghw/pkg/net"
 	"github.com/jaypipes/ghw/pkg/option"
 	"github.com/jaypipes/ghw/pkg/pci"
 	"github.com/jaypipes/ghw/pkg/topology"
+
+	"github.com/ffromani/ghwadvisor/pkg/ghwext/cpu"
 )
 
 type Info struct {

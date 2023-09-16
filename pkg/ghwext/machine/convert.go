@@ -24,8 +24,8 @@ func (info *Info) IntoCAdvisorMachineInfo(machineInfo *cadvisorapiv1.MachineInfo
 	machineInfo.CPUVendorID = info.CPU.Processors[0].Vendor
 	machineInfo.NumCores = int(info.CPU.TotalCores)
 	machineInfo.NumPhysicalCores = int(info.CPU.TotalThreads)
-	machineInfo.NumSockets = 0   // TODO
-	machineInfo.CpuFrequency = 0 // TODO
+	machineInfo.NumSockets = int(info.CPU.TotalPackages)
+	machineInfo.CpuFrequency = uint64(info.CPU.CurrentFrequency)
 
 	machineInfo.MemoryByType = make(map[string]*cadvisorapiv1.MemoryInfo)
 	machineInfo.HugePages = []cadvisorapiv1.HugePagesInfo{} // TODO
