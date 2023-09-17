@@ -1,5 +1,5 @@
 VERSION ?= 0.0.1
-REPO ?= quay.io/ffromani
+REPO ?= quay.io/fromani
 IMAGE_TAG_BASE ?= $(REPO)/ghwadvisor
 # Image URL to use all building/pushing image targets
 
@@ -33,8 +33,8 @@ image: container-build
 	
 .PHONY: container-build
 container-build:
-	$(CONTAINER_ENGINE) build -t $(IMAGE_TAG_BASE):$(VERSION) -f Dockerfile .
-	$(CONTAINER_ENGINE) build -t $(IMAGE_TAG_BASE)-minimal:$(VERSION) -f Dockerfile.scratch .
+	$(CONTAINER_ENGINE) build -t $(IMAGE_TAG_BASE):v$(VERSION) -f Dockerfile .
+	$(CONTAINER_ENGINE) build -t $(IMAGE_TAG_BASE)-minimal:v$(VERSION) -f Dockerfile.scratch .
 
 .PHONY: clean
 clean:
