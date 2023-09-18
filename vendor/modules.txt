@@ -30,20 +30,13 @@ github.com/jaypipes/ghw/pkg/marshal
 github.com/jaypipes/ghw/pkg/memory
 github.com/jaypipes/ghw/pkg/net
 github.com/jaypipes/ghw/pkg/option
-github.com/jaypipes/ghw/pkg/pci
 github.com/jaypipes/ghw/pkg/pci/address
 github.com/jaypipes/ghw/pkg/snapshot
 github.com/jaypipes/ghw/pkg/topology
 github.com/jaypipes/ghw/pkg/unitutil
 github.com/jaypipes/ghw/pkg/util
-# github.com/jaypipes/pcidb v1.0.0
-## explicit; go 1.17
-github.com/jaypipes/pcidb
 # github.com/kr/text v0.2.0
 ## explicit
-# github.com/mitchellh/go-homedir v1.1.0
-## explicit
-github.com/mitchellh/go-homedir
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors

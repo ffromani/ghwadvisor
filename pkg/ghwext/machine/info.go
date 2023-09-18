@@ -19,7 +19,6 @@ import (
 	"github.com/jaypipes/ghw/pkg/memory"
 	"github.com/jaypipes/ghw/pkg/net"
 	"github.com/jaypipes/ghw/pkg/option"
-	"github.com/jaypipes/ghw/pkg/pci"
 	"github.com/jaypipes/ghw/pkg/topology"
 
 	"github.com/ffromani/ghwadvisor/pkg/ghwext/cpu"
@@ -31,7 +30,6 @@ type Info struct {
 	CPU      *cpu.Info      `json:"cpu"`
 	Topology *topology.Info `json:"topology"`
 	Network  *net.Info      `json:"network"`
-	PCI      *pci.Info      `json:"pci"`
 }
 
 func New(opts ...*option.Option) (*Info, error) {
@@ -55,16 +53,11 @@ func New(opts ...*option.Option) (*Info, error) {
 	if err != nil {
 		return nil, err
 	}
-	pciInfo, err := pci.New(opts...)
-	if err != nil {
-		return nil, err
-	}
 	return &Info{
 		CPU:      cpuInfo,
 		Memory:   memInfo,
 		Block:    blockInfo,
 		Topology: topologyInfo,
 		Network:  netInfo,
-		PCI:      pciInfo,
 	}, nil
 }
