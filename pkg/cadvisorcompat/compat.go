@@ -47,9 +47,13 @@ func New(sysfsRoot string) *Handle {
 }
 
 func (hnd *Handle) Start() error {
-	info, err := machine.New(option.WithPathOverrides(option.PathOverrides{
+	pathOverrides := option.PathOverrides{
 		"/sys": hnd.sysfsRoot,
-	}))
+	}
+	info, err := machine.New(
+		option.WithDisableTools(),
+		option.WithPathOverrides(pathOverrides),
+	)
 	hnd.info = info
 	return err
 }
