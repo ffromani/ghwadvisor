@@ -2,10 +2,15 @@
 #
 # look ma, no root!
 
-VERSION=v0.0.1
+VERSION=v0.0.2
+IMG=quay.io/fromani/ghwadvisor:$VERSION
+if [ -n "$MINIMAL" ]; then
+	IMG=quay.io/fromani/ghwadvisor-minimal:$VERSION
+fi
+
 exec podman run \
   --volume=/sys:/sys:ro \
   --publish=8080:8080 \
   --detach=true \
   --name=ghwadvisor \
-  quay.io/fromani/ghwadvisor:$VERSION
+  $IMG

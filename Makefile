@@ -1,4 +1,4 @@
-VERSION ?= 0.0.1
+VERSION ?= 0.0.2
 REPO ?= quay.io/fromani
 IMAGE_TAG_BASE ?= $(REPO)/ghwadvisor
 # Image URL to use all building/pushing image targets
