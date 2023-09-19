@@ -30,6 +30,8 @@ type Info struct {
 	CPU      *cpu.Info      `json:"cpu"`
 	Topology *topology.Info `json:"topology"`
 	Network  *net.Info      `json:"network"`
+	// future: note: pcidb load is hanging on wasmedge 0.13.3
+	// when compiled with golang 1.21.{0,1}
 }
 
 func New(opts ...*option.Option) (*Info, error) {

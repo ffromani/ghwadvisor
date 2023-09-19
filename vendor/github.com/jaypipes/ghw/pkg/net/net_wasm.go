@@ -6,21 +6,13 @@
 package net
 
 import (
-	"bufio"
-	"bytes"
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/jaypipes/ghw/pkg/context"
 	"github.com/jaypipes/ghw/pkg/linuxpath"
 	"github.com/jaypipes/ghw/pkg/util"
-)
-
-const (
-	warnEthtoolNotInstalled = `ethtool not installed. Cannot grab NIC capabilities`
 )
 
 func (i *Info) load() error {
@@ -35,14 +27,6 @@ func nics(ctx *context.Context) []*NIC {
 	files, err := os.ReadDir(paths.SysClassNet)
 	if err != nil {
 		return nics
-	}
-
-	etAvailable := ctx.EnableTools
-	if etAvailable {
-		if etInstalled := ethtoolInstalled(); !etInstalled {
-			ctx.Warn(warnEthtoolNotInstalled)
-			etAvailable = false
-		}
 	}
 
 	for _, file := range files {
@@ -67,13 +51,9 @@ func nics(ctx *context.Context) []*NIC {
 		mac := netDeviceMacAddress(paths, filename)
 		nic.MacAddress = mac
 		nic.MACAddress = mac
-		if etAvailable {
-			nic.netDeviceParseEthtool(ctx, filename)
-		} else {
-			nic.Capabilities = []*NICCapability{}
-			// Sets NIC struct fields from data in SysFs
-			nic.setNicAttrSysFs(paths, filename)
-		}
+		nic.Capabilities = []*NICCapability{}
+		// Sets NIC struct fields from data in SysFs
+		nic.setNicAttrSysFs(paths, filename)
 
 		nic.PCIAddress = netDevicePCIAddress(paths.SysClassNet, filename)
 
@@ -101,101 +81,6 @@ func netDeviceMacAddress(paths *linuxpath.Paths, dev string) string {
 		return ""
 	}
 	return strings.TrimSpace(string(contents))
-}
-
-func ethtoolInstalled() bool {
-	_, err := exec.LookPath("ethtool")
-	return err == nil
-}
-
-func (n *NIC) netDeviceParseEthtool(ctx *context.Context, dev string) {
-	var out bytes.Buffer
-	path, _ := exec.LookPath("ethtool")
-
-	// Get auto-negotiation and pause-frame-use capabilities from "ethtool" (with no options)
-	// Populate Speed, Duplex, SupportedLinkModes, SupportedPorts, SupportedFECModes,
-	// AdvertisedLinkModes, and AdvertisedFECModes attributes from "ethtool" output.
-	cmd := exec.Command(path, dev)
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err == nil {
-		m := parseNicAttrEthtool(&out)
-		n.Capabilities = append(n.Capabilities, autoNegCap(m))
-		n.Capabilities = append(n.Capabilities, pauseFrameUseCap(m))
-
-		// Update NIC Attributes with ethtool output
-		n.Speed = strings.Join(m["Speed"], "")
-		n.Duplex = strings.Join(m["Duplex"], "")
-		n.SupportedLinkModes = m["Supported link modes"]
-		n.SupportedPorts = m["Supported ports"]
-		n.SupportedFECModes = m["Supported FEC modes"]
-		n.AdvertisedLinkModes = m["Advertised link modes"]
-		n.AdvertisedFECModes = m["Advertised FEC modes"]
-	} else {
-		msg := fmt.Sprintf("could not grab NIC link info for %s: %s", dev, err)
-		ctx.Warn(msg)
-	}
-
-	// Get all other capabilities from "ethtool -k"
-	cmd = exec.Command(path, "-k", dev)
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err == nil {
-		// The out variable will now contain something that looks like the
-		// following.
-		//
-		// Features for enp58s0f1:
-		// rx-checksumming: on
-		// tx-checksumming: off
-		//     tx-checksum-ipv4: off
-		//     tx-checksum-ip-generic: off [fixed]
-		//     tx-checksum-ipv6: off
-		//     tx-checksum-fcoe-crc: off [fixed]
-		//     tx-checksum-sctp: off [fixed]
-		// scatter-gather: off
-		//     tx-scatter-gather: off
-		//     tx-scatter-gather-fraglist: off [fixed]
-		// tcp-segmentation-offload: off
-		//     tx-tcp-segmentation: off
-		//     tx-tcp-ecn-segmentation: off [fixed]
-		//     tx-tcp-mangleid-segmentation: off
-		//     tx-tcp6-segmentation: off
-		// < snipped >
-		scanner := bufio.NewScanner(&out)
-		// Skip the first line...
-		scanner.Scan()
-		for scanner.Scan() {
-			line := strings.TrimPrefix(scanner.Text(), "\t")
-			n.Capabilities = append(n.Capabilities, netParseEthtoolFeature(line))
-		}
-
-	} else {
-		msg := fmt.Sprintf("could not grab NIC capabilities for %s: %s", dev, err)
-		ctx.Warn(msg)
-	}
-
-}
-
-// netParseEthtoolFeature parses a line from the ethtool -k output and returns
-// a NICCapability.
-//
-// The supplied line will look like the following:
-//
-// tx-checksum-ip-generic: off [fixed]
-//
-// [fixed] indicates that the feature may not be turned on/off. Note: it makes
-// no difference whether a privileged user runs `ethtool -k` when determining
-// whether [fixed] appears for a feature.
-func netParseEthtoolFeature(line string) *NICCapability {
-	parts := strings.Fields(line)
-	cap := strings.TrimSuffix(parts[0], ":")
-	enabled := parts[1] == "on"
-	fixed := len(parts) == 3 && parts[2] == "[fixed]"
-	return &NICCapability{
-		Name:      cap,
-		IsEnabled: enabled,
-		CanEnable: !fixed,
-	}
 }
 
 func netDevicePCIAddress(netDevDir, netDevName string) *string {
@@ -294,65 +179,4 @@ func pauseFrameUseCap(m map[string][]string) *NICCapability {
 	}
 
 	return &pauseFrameUse
-}
-
-func parseNicAttrEthtool(out *bytes.Buffer) map[string][]string {
-	// The out variable will now contain something that looks like the
-	// following.
-	//
-	//Settings for eth0:
-	//	Supported ports: [ TP ]
-	//	Supported link modes:   10baseT/Half 10baseT/Full
-	//	                        100baseT/Half 100baseT/Full
-	//	                        1000baseT/Full
-	//	Supported pause frame use: No
-	//	Supports auto-negotiation: Yes
-	//	Supported FEC modes: Not reported
-	//	Advertised link modes:  10baseT/Half 10baseT/Full
-	//	                        100baseT/Half 100baseT/Full
-	//	                        1000baseT/Full
-	//	Advertised pause frame use: No
-	//	Advertised auto-negotiation: Yes
-	//	Advertised FEC modes: Not reported
-	//	Speed: 1000Mb/s
-	//	Duplex: Full
-	//	Auto-negotiation: on
-	//	Port: Twisted Pair
-	//	PHYAD: 1
-	//	Transceiver: internal
-	//	MDI-X: off (auto)
-	//	Supports Wake-on: pumbg
-	//	Wake-on: d
-	//        Current message level: 0x00000007 (7)
-	//                               drv probe link
-	//	Link detected: yes
-
-	scanner := bufio.NewScanner(out)
-	// Skip the first line
-	scanner.Scan()
-	m := make(map[string][]string)
-	var name string
-	for scanner.Scan() {
-		var fields []string
-		if strings.Contains(scanner.Text(), ":") {
-			line := strings.Split(scanner.Text(), ":")
-			name = strings.TrimSpace(line[0])
-			str := strings.Trim(strings.TrimSpace(line[1]), "[]")
-			switch str {
-			case
-				"Not reported",
-				"Unknown":
-				continue
-			}
-			fields = strings.Fields(str)
-		} else {
-			fields = strings.Fields(strings.Trim(strings.TrimSpace(scanner.Text()), "[]"))
-		}
-
-		for _, f := range fields {
-			m[name] = append(m[name], strings.TrimSpace(f))
-		}
-	}
-
-	return m
 }

@@ -17,12 +17,18 @@ ghwadvisor:
 	LDFLAGS="-s -w "; \
 	go build -mod=vendor -o _out/ghwadvisor -ldflags "$$LDFLAGS" cmd/ghwadvisor/main.go
 
-.PHONY: binaries-static
-binaries-static: outdir ghwadvisor-static
+ghwadvisor.wasm:
+	GOOS=wasip1 GOARCH=wasm go build -mod=vendor -o _out/ghwadvisor.wasm cmd/ghwadvisor/main.go
 
 ghwadvisor-static:
 	LDFLAGS="-s -w "; \
 	CGO_ENABLED=0 go build -mod=vendor -o _out/ghwadvisor -ldflags "$$LDFLAGS" cmd/ghwadvisor/main.go
+
+.PHONY: binaries-static
+binaries-static: outdir ghwadvisor-static
+
+.PHONY: binaries-wasm
+binaries-wasm: outdir ghwadvisor.wasm
 
 .PHONY: test-unit
 test-unit:
@@ -35,6 +41,10 @@ image: container-build
 container-build:
 	$(CONTAINER_ENGINE) build -t $(IMAGE_TAG_BASE):v$(VERSION) -f Dockerfile .
 	$(CONTAINER_ENGINE) build -t $(IMAGE_TAG_BASE)-minimal:v$(VERSION) -f Dockerfile.scratch .
+
+.PHONY: container-build-wasm
+container-build-wasm:
+	$(CONTAINER_ENGINE) build --annotation run.oci.handler=wasm -t $(IMAGE_TAG_BASE)-wasm:v$(VERSION) -f Dockerfile.wasm .
 
 .PHONY: clean
 clean:

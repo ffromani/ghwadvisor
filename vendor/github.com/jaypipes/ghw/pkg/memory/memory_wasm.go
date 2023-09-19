@@ -45,9 +45,9 @@ var (
 
 func (i *Info) load() error {
 	paths := linuxpath.New(i.ctx)
-	tub := memTotalUsableBytes(paths)
-	if tub < 1 {
-		return fmt.Errorf("Could not determine total usable bytes of memory")
+	tub, err := memoryTotalUsableBytesFromPath(paths.ProcMeminfo)
+	if err != nil {
+		return fmt.Errorf("Could not determine total usable bytes of memory: %w", err)
 	}
 	i.TotalUsableBytes = tub
 	tpb := memTotalPhysicalBytes(paths)
@@ -233,14 +233,6 @@ func memTotalPhysicalBytesFromSyslog(paths *linuxpath.Paths) int64 {
 		}
 	}
 	return -1
-}
-
-func memTotalUsableBytes(paths *linuxpath.Paths) int64 {
-	amount, err := memoryTotalUsableBytesFromPath(paths.ProcMeminfo)
-	if err != nil {
-		return -1
-	}
-	return amount
 }
 
 func memoryTotalUsableBytesFromPath(meminfoPath string) (int64, error) {

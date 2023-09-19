@@ -30,6 +30,7 @@ import (
 
 	"github.com/ffromani/ghwadvisor/pkg/cadvisorcompat"
 	"github.com/ffromani/ghwadvisor/pkg/router"
+	"github.com/ffromani/ghwadvisor/pkg/server"
 )
 
 func main() {
@@ -61,19 +62,19 @@ func main() {
 	}
 
 	mh := machineHandler{machineInfo: minfo}
-	rt := router.New([]router.Route{
+
+	klog.Infof("ghwadvisor ready (setup time: %v)", time.Since(setupStart))
+
+	klog.Infof("machine data:\n%s", toJSON(mh.machineInfo))
+
+	log.Fatal(server.Run(addr, []router.Route{
 		{
 			"machine",
 			"GET",
 			"/api/v1.3/machine", // see: https://github.com/google/cadvisor/blob/master/docs/api.md
 			mh.ServeHTTP,
 		},
-	})
-
-	klog.Infof("ghwadvisor ready (setup time: %v)", time.Since(setupStart))
-
-	klog.Infof("machine data:\n%s", toJSON(mh.machineInfo))
-	log.Fatal(http.ListenAndServe(addr, rt))
+	}))
 }
 
 type machineHandler struct {

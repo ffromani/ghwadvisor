@@ -9,4 +9,4 @@ RUN make binaries-static
 FROM scratch
 COPY --from=builder /go/src/github.com/ffromani/ghwadvisor/_out/ghwadvisor /ghwadvisor
 EXPOSE 8080/tcp
-ENTRYPOINT ["/ghwadvisor"]
+CMD ["/ghwadvisor"]
